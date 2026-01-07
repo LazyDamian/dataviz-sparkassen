@@ -5,10 +5,9 @@ import seaborn as sns
 from pathlib import Path
 
 # --- 1. SETTINGS & PFADE ---
-csv_file_path = Path("data/inkar/inkar_2025.csv")
-nordbayern_ids = ["093", "094", "095", "096"]
+csv_file_path = Path(r"data/inkar_bayern_nordbayern.csv")
 
-# Auswahl der relevanten Indikatoren aus deiner Liste
+# Auswahl der relevanten Indikatoren
 pos_indikatoren = [
     "Einzelhandelsrelevante Kaufkraft",
     "Haushalte mit hohem Einkommen",
@@ -38,24 +37,19 @@ einheiten = {
 }
 
 if not csv_file_path.exists():
-    print(f"Datei nicht gefunden unter: {csv_file_path}")
+    print(f"Datei nicht gefunden: {csv_file_path}")
 else:
     # --- 2. DATEN LADEN & FILTERN ---
-    chunks = []
-    for chunk in pd.read_csv(csv_file_path, sep=";", chunksize=300000,
-                             dtype={"Kennziffer": str, "Wert": str}):
-        mask = (chunk["Kennziffer"].str.startswith(tuple(nordbayern_ids))) & \
-               (chunk["Raumbezug"] == "Kreise") & \
-               (chunk["Indikator"].isin(alle_indikatoren))
-        subset = chunk[mask].copy()
-        subset["Wert"] = pd.to_numeric(subset["Wert"].str.replace(",", "."), errors="coerce")
-        chunks.append(subset)
+    df_raw = pd.read_csv(csv_file_path, sep=",", dtype={"Kennziffer": str})
 
-    df_all = pd.concat(chunks)
-    latest_year = df_all["Zeitbezug"].max()
+    # Filter auf Nordbayern und Indikatoren
+    mask = (df_raw["Nordbayern"] == True) & (df_raw["Indikator"].isin(alle_indikatoren))
+    df_filtered = df_raw[mask].copy()
+    df_filtered["Wert"] = pd.to_numeric(df_filtered["Wert"], errors="coerce")
 
-    # Pivotierung
-    df_pivot = df_all[df_all["Zeitbezug"] == latest_year].pivot_table(
+    latest_year = df_filtered["Zeitbezug"].max()
+
+    df_pivot = df_filtered[df_filtered["Zeitbezug"] == latest_year].pivot_table(
         index=["Name"], columns="Indikator", values="Wert"
     ).reset_index()
 
@@ -79,50 +73,36 @@ else:
     top_10 = df_ranking.sort_values(by="Gesamt_Index", ascending=False).head(10).copy()
     top_10.insert(0, 'Platz', range(1, 11))
 
-    # --- 4. VISUALISIERUNG MIT SPEICHERFUNKTION ---
+    # --- 4. CLEAN VISUALISIERUNG (NUR GESAMT SCORE) ---
     plt.style.use('seaborn-v0_8-white')
-
-    # Sortierung: Höchster Score oben (für horizontale Balken aufsteigend sortieren)
-    plot_df = top_10.sort_values(by="Gesamt_Index", ascending=True).copy()
+    plot_df = top_10.sort_values(by="Gesamt_Index", ascending=True)
 
     fig, ax = plt.subplots(figsize=(12, 7))
+    bars = ax.barh(plot_df["Name"], plot_df["Gesamt_Index"], color="#1a4a7c", height=0.6)
 
-    # Balken plotten
-    bars = ax.barh(plot_df["Name"], plot_df["Gesamt_Index"],
-                   color="#1a4a7c", edgecolor="white", height=0.6)
+    ax.set_title(f'Top 10 Standortpotenziale Nordbayern ({latest_year})\n',
+                 fontsize=18, fontweight='bold', loc='left')
+    ax.set_xlabel('Gesamt-Potenzial (Score 0-100)')
+    ax.set_xlim(0, 110)
 
-    # Styling
-    ax.set_title(f'Top 10 Bank-Standortpotenziale Nordbayern ({latest_year})\n',
-                 fontsize=18, fontweight='bold', loc='left', color='#2c3e50')
-    ax.set_xlabel('\nGesamt-Potenzial (Score 0-100)', fontsize=12, color='#7f8c8d')
-    ax.set_ylabel('')
-
-    # Werte beschriften
     for bar in bars:
         width = bar.get_width()
-        ax.text(width + 1.5, bar.get_y() + bar.get_height() / 2,
-                f'{width:.1f} Pkt.',
-                va='center', fontweight='bold', fontsize=11, color='#1a4a7c')
+        ax.text(width + 1, bar.get_y() + bar.get_height() / 2,
+                f'{width:.1f} Pkt.', va='center', fontweight='bold', color='#1a4a7c')
 
-    ax.xaxis.grid(True, linestyle='--', alpha=0.3)
     sns.despine(left=True, bottom=True)
-    ax.set_xlim(0, 105)
-
+    ax.xaxis.grid(True, linestyle='--', alpha=0.3)
     plt.tight_layout()
 
-    # --- PLOT ABSPEICHERN ---
-    # Du kannst verschiedene Formate wählen: .png, .pdf, .jpg, .svg
-    # 'bbox_inches="tight"' sorgt dafür, dass keine Beschriftungen abgeschnitten werden
-    plt.savefig("Standort_Ranking_Nordbayern.png", dpi=300, bbox_inches="tight")
-    print(f"\nGrafik wurde als 'Standort_Ranking_Nordbayern.png' gespeichert.")
-
+    plt.savefig(f"Ranking_Gesamt_{latest_year}.png", dpi=300, bbox_inches="tight")
     plt.show()
 
-    # --- 5. VOLLSTÄNDIGE TABELLE MIT EINHEITEN ---
-    # Header mit Einheiten versehen
+    # --- 5. VOLLSTÄNDIGE TABELLE (MIT ALLEN VARIABLEN) ---
+    # Hier werden nun alle Indikatoren wieder hinzugefügt
     final_cols = ["Platz", "Name", "Gesamt_Index"] + [c for c in alle_indikatoren if c in top_10.columns]
     report_table = top_10[final_cols].copy()
 
+    # Spaltennamen für die Tabelle verschönern (Einheiten hinzufügen)
     new_headers = []
     for col in report_table.columns:
         if col in einheiten:
@@ -135,7 +115,7 @@ else:
     report_table.columns = new_headers
 
     print("\n" + "═" * 300)
-    print(f" STRATEGISCHER STANDORT-REPORT NORDBAYERN: TOP 10 RANKING ".center(180))
+    print(f" STRATEGISCHER STANDORT-REPORT NORDBAYERN: TOP 10 RANKING (BASIS: {csv_file_path}) ".center(180))
     print("═" * 300)
     pd.options.display.max_columns = None
     pd.options.display.width = 1000
