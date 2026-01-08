@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
+from collections import Counter
 
 # --- 1. SETTINGS & PFADE ---
 csv_file_path = Path(r"data/inkar_bayern_nordbayern.csv")
@@ -168,6 +169,51 @@ else:
 
         # Speichern
         plt.savefig(f"Plot_{dateiname}.png", dpi=300, bbox_inches="tight")
+        plt.show()
+
+        # --- 1. ZÄHLEN DER TOP-5 PLATZIERUNGEN ---
+        top_auftritte = []
+
+        for dateiname, info in kategorien_gruppen.items():
+            # Wir nutzen die bereits berechneten Gruppen-Scores aus dem vorherigen Schritt
+            group_score_name = f"Temp_Score_{dateiname}"
+            if group_score_name in df_ranking.columns:
+                # Die 5 besten Namen dieser Kategorie sammeln
+                top_5_namen = df_ranking.sort_values(by=group_score_name, ascending=False).head(5)["Name"].tolist()
+                top_auftritte.extend(top_5_namen)
+
+        # Häufigkeit zählen
+        auftritte_count = Counter(top_auftritte)
+        # In DataFrame umwandeln für den Plot
+        df_konsistenz = pd.DataFrame(auftritte_count.items(), columns=['Name', 'Anzahl']).sort_values(by='Anzahl',
+                                                                                                      ascending=True)
+
+        # --- 2. PLOT: DIE KONSISTENZ-SIEGER ---
+        plt.figure(figsize=(10, 6))
+        # Wir nehmen nur die, die mindestens 2-mal in den Top 5 waren
+        df_konsistenz_filtered = df_konsistenz[df_konsistenz['Anzahl'] >= 1]
+
+        colors = sns.color_palette("viridis", len(df_konsistenz_filtered))
+        bars = plt.barh(df_konsistenz_filtered["Name"], df_konsistenz_filtered["Anzahl"], color="#1d3557", height=0.6)
+
+        # Titel & Beschriftung
+        plt.title('Die "Allrounder" Nordbayerns\n', fontsize=16, fontweight='bold')
+        plt.suptitle('Häufigkeit der Top-5-Platzierungen über alle 4 Kategorien', fontsize=10, color='#555555', y=0.92)
+
+        plt.xlabel('Anzahl der Top-5-Platzierungen')
+        plt.xticks(range(0, 5))  # Da es nur 4 Kategorien gibt
+
+        # Werte an die Balken
+        for bar in bars:
+            width = bar.get_width()
+            plt.text(width + 0.1, bar.get_y() + bar.get_height() / 2,
+                     f'{int(width)}x', va='center', fontweight='bold', color='#1d3557')
+
+        sns.despine()
+        plt.tight_layout()
+
+        # Speichern
+        plt.savefig("Plot_Konsistenz_Sieger.png", dpi=300, bbox_inches="tight")
         plt.show()
 
     # --- 5. VOLLSTÄNDIGE TABELLE (MIT ALLEN VARIABLEN) ---
