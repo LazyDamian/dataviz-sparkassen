@@ -97,6 +97,79 @@ else:
     plt.savefig(f"Ranking_Gesamt_{latest_year}.png", dpi=300, bbox_inches="tight")
     plt.show()
 
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+
+    # --- 1. DEFINITION DER ÜBERKATEGORIEN MIT ZUORDNUNG ---
+    kategorien_gruppen = {
+        "Privater_Wohlstand": {
+            "cols": ["Einzelhandelsrelevante Kaufkraft", "Haushalte mit hohem Einkommen", "Medianeinkommen"],
+            "color": "#1a4a7c",
+            "label": "Finanzkraft & Wohlstand",
+            "beschreibung": "Kaufkraft, Hohe Einkommen, Median-Gehalt"
+        },
+        "Markt_Wirtschaftskraft": {
+            "cols": ["Einwohnerdichte", "Beschäftigtendichte (AO)",
+                     "Bruttoinlandsprodukt je Einwohner in Kaufkraftstandards (KKS)"],
+            "color": "#2a9d8f",
+            "label": "Wirtschaftsaktivität & Dichte",
+            "beschreibung": "Einwohner- & Jobdichte, BIP (KKS)"
+        },
+        "Mobilitaet": {
+            "cols": ["Pkw-Dichte"],
+            "color": "#457b9d",
+            "label": "Mobilität & Infrastruktur",
+            "beschreibung": "Pkw-Dichte pro 1000 Einwohner"
+        },
+        "Soziale_Stabilitaet": {
+            "cols": ["Arbeitslosenquote", "Haushalte mit niedrigem Einkommen"],
+            "color": "#e67e22",
+            "label": "Soziale Stabilität (Risiko-Check)",
+            "beschreibung": "Arbeitslosigkeit, Niedrige Einkommen (Invertiert)"
+        }
+    }
+
+    # --- 2. GENERIERUNG DER EINZELNEN PLOTS ---
+    for dateiname, info in kategorien_gruppen.items():
+        # Nur vorhandene Spalten nutzen
+        score_cols = [f"Score_{col}" for col in info["cols"] if f"Score_{col}" in df_ranking.columns]
+
+        if not score_cols:
+            continue
+
+        group_score_name = f"Temp_Score_{dateiname}"
+        df_ranking[group_score_name] = df_ranking[score_cols].mean(axis=1)
+
+        # Top 5 extrahieren
+        top_5 = df_ranking.sort_values(by=group_score_name, ascending=True).tail(5)
+
+        plt.figure(figsize=(11, 7))
+        bars = plt.barh(top_5["Name"], top_5[group_score_name], color=info["color"], height=0.6)
+
+        # HAUPTTITEL
+        plt.title(f'Top 5 Standorte: {info["label"]}\n', fontsize=16, fontweight='bold', pad=10)
+
+        # UNTERTITEL (Die "Zutaten")
+        plt.text(0.5, 1.02, f"Basis-Faktoren: {info['beschreibung']}",
+                 transform=plt.gca().transAxes, fontsize=10, color='#555555',
+                 style='italic', ha='center')
+
+        plt.xlabel('Aggregierter Score (0-100)')
+        plt.xlim(0, 115)
+
+        # Werte beschriften
+        for bar in bars:
+            width = bar.get_width()
+            plt.text(width + 1, bar.get_y() + bar.get_height() / 2,
+                     f'{width:.1f} Pkt.', va='center', fontweight='bold', color=info["color"])
+
+        sns.despine()
+        plt.tight_layout()
+
+        # Speichern
+        plt.savefig(f"Plot_{dateiname}.png", dpi=300, bbox_inches="tight")
+        plt.show()
+
     # --- 5. VOLLSTÄNDIGE TABELLE (MIT ALLEN VARIABLEN) ---
     # Hier werden nun alle Indikatoren wieder hinzugefügt
     final_cols = ["Platz", "Name", "Gesamt_Index"] + [c for c in alle_indikatoren if c in top_10.columns]
