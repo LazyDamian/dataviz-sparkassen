@@ -5,8 +5,10 @@ import seaborn as sns
 from pathlib import Path
 from collections import Counter
 
+
 # --- 1. SETTINGS & PFADE ---
 csv_file_path = Path(r"data/inkar_bayern_nordbayern.csv")
+
 
 # Auswahl der relevanten Indikatoren
 pos_indikatoren = [
@@ -104,13 +106,11 @@ else:
         }
     }
 
-    import matplotlib.pyplot as plt
-    import seaborn as sns
-    import pandas as pd
-    from collections import Counter
+
 
     # --- 0. GRUNDEINSTELLUNGEN ---
     plt.style.use('seaborn-v0_8-white')
+    grafik_pfad = Path("figures")
 
     # Definition der individuellen Farb-Gradients (Dunkel nach Hell)
     # Der erste Wert in der Liste ist für Platz 1 (der oberste Balken)
@@ -142,7 +142,7 @@ else:
 
     sns.despine(left=True, bottom=True)
     plt.tight_layout()
-    plt.savefig("Plot_1_Wohlstand.png", dpi=300)
+    plt.savefig(grafik_pfad / "Plot_1_Wohlstand.png", dpi=300)
     plt.show()
 
     # --- 2. PLOT: WIRTSCHAFTSKRAFT & DICHTE ---
@@ -166,7 +166,7 @@ else:
 
     sns.despine(left=True, bottom=True)
     plt.tight_layout()
-    plt.savefig("Plot_2_Wirtschaft.png", dpi=300)
+    plt.savefig(grafik_pfad / "Plot_2_Wirtschaft.png", dpi=300)
     plt.show()
 
 
@@ -192,7 +192,7 @@ else:
 
     sns.despine(left=True, bottom=True)
     plt.tight_layout()
-    plt.savefig("Plot_3_Mobilitaet.png", dpi=300)
+    plt.savefig(grafik_pfad / "Plot_3_Mobilitaet.png", dpi=300)
     plt.show()
 
     # --- 4. PLOT: SOZIALE STABILITÄT (ERDTÖNE & ORANGE) ---
@@ -218,7 +218,7 @@ else:
 
     sns.despine(left=True, bottom=True)
     plt.tight_layout()
-    plt.savefig("Plot_4_Stabilitaet.png", dpi=300)
+    plt.savefig(grafik_pfad / "Plot_4_Stabilitaet.png", dpi=300)
     plt.show()
 
     # --- 5. FINALES RANKING: ALLROUNDER KONSISTENZ (ANTHRAZIT & GOLD) ---
@@ -253,7 +253,7 @@ else:
     plt.xlim(0, 5.5)
     sns.despine(left=True, bottom=True)
     plt.tight_layout()
-    plt.savefig("Plot_5_Final_Allrounder.png", dpi=300)
+    plt.savefig(grafik_pfad / "Plot_5_Final_Allrounder.png", dpi=300)
     plt.show()
 
     # --- 4. ANGEPASSTES TOP 10 RANKING (MIT HIGHLIGHT-FARBE) ---
@@ -303,7 +303,7 @@ else:
     ax.xaxis.grid(True, linestyle='--', alpha=0.3)
     plt.tight_layout()
 
-    plt.savefig(f"Ranking_Gesamt_Highlighted_{latest_year}.png", dpi=300, bbox_inches="tight")
+    plt.savefig(grafik_pfad / f"Ranking_Gesamt_Highlighted_{latest_year}.png", dpi=300, bbox_inches="tight")
     plt.show()
 
     print("Alle 5 Visualisierungen wurden erfolgreich als PNG gespeichert.")
