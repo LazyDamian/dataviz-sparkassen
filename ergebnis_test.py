@@ -74,32 +74,6 @@ else:
     top_10 = df_ranking.sort_values(by="Gesamt_Index", ascending=False).head(10).copy()
     top_10.insert(0, 'Platz', range(1, 11))
 
-    # --- 4. CLEAN VISUALISIERUNG (NUR GESAMT SCORE) ---
-    plt.style.use('seaborn-v0_8-white')
-    plot_df = top_10.sort_values(by="Gesamt_Index", ascending=True)
-
-    fig, ax = plt.subplots(figsize=(12, 7))
-    bars = ax.barh(plot_df["Name"], plot_df["Gesamt_Index"], color="#1a4a7c", height=0.6)
-
-    ax.set_title(f'Top 10 Standortpotenziale Nordbayern ({latest_year})\n',
-                 fontsize=18, fontweight='bold', loc='left')
-    ax.set_xlabel('Gesamt-Potenzial (Score 0-100)')
-    ax.set_xlim(0, 110)
-
-    for bar in bars:
-        width = bar.get_width()
-        ax.text(width + 1, bar.get_y() + bar.get_height() / 2,
-                f'{width:.1f} Pkt.', va='center', fontweight='bold', color='#1a4a7c')
-
-    sns.despine(left=True, bottom=True)
-    ax.xaxis.grid(True, linestyle='--', alpha=0.3)
-    plt.tight_layout()
-
-    plt.savefig(f"Ranking_Gesamt_{latest_year}.png", dpi=300, bbox_inches="tight")
-    plt.show()
-
-    import matplotlib.pyplot as plt
-    import seaborn as sns
 
     # --- 1. DEFINITION DER ÜBERKATEGORIEN MIT ZUORDNUNG ---
     kategorien_gruppen = {
@@ -130,91 +104,209 @@ else:
         }
     }
 
-    # --- 2. GENERIERUNG DER EINZELNEN PLOTS ---
-    for dateiname, info in kategorien_gruppen.items():
-        # Nur vorhandene Spalten nutzen
-        score_cols = [f"Score_{col}" for col in info["cols"] if f"Score_{col}" in df_ranking.columns]
+    import matplotlib.pyplot as plt
+    import seaborn as sns
+    import pandas as pd
+    from collections import Counter
 
-        if not score_cols:
-            continue
+    # --- 0. GRUNDEINSTELLUNGEN ---
+    plt.style.use('seaborn-v0_8-white')
 
-        group_score_name = f"Temp_Score_{dateiname}"
-        df_ranking[group_score_name] = df_ranking[score_cols].mean(axis=1)
+    # Definition der individuellen Farb-Gradients (Dunkel nach Hell)
+    # Der erste Wert in der Liste ist für Platz 1 (der oberste Balken)
+    gradients = {
+        "Wohlstand": ["#08306b", "#2171b5", "#4292c6", "#6baed6", "#9ecae1"],  # Deep Blue Gradient
+        "Wirtschaft": ["#00441b", "#238b45", "#41ab5d", "#74c476", "#a1d99b"],  # Forest Green Gradient
+        "Mobil": ["#4d004b", "#810f7c", "#88419d", "#8c6bb1", "#8c96c6"],  # Purple/Indigo Gradient
+        "Stabil": ["#7f2704", "#a63603", "#d94801", "#f16913", "#fd8d3c"],  # Deep Orange/Rust Gradient
+        "Allrounder": ["#b8860b", "#daa520", "#f4c430", "#ffd700"]  # Gold/Metallic Gradient
+    }
 
-        # Top 5 extrahieren
-        top_5 = df_ranking.sort_values(by=group_score_name, ascending=True).tail(5)
+    # --- 1. PLOT: PRIVATER WOHLSTAND ---
+    plt.figure(figsize=(10, 6))
+    group_name = "Temp_Score_Wohlstand"
+    cols_w = ["Einzelhandelsrelevante Kaufkraft", "Haushalte mit hohem Einkommen", "Medianeinkommen"]
+    df_ranking[group_name] = df_ranking[[f"Score_{c}" for c in cols_w if f"Score_{c}" in df_ranking.columns]].mean(
+        axis=1)
 
-        plt.figure(figsize=(11, 7))
-        bars = plt.barh(top_5["Name"], top_5[group_score_name], color=info["color"], height=0.6)
+    top_5 = df_ranking.sort_values(by=group_name).tail(5)
+    bars = plt.barh(top_5["Name"], top_5[group_name], color=gradients["Wohlstand"][::-1], height=0.6)
 
-        # HAUPTTITEL
-        plt.title(f'Top 5 Standorte: {info["label"]}\n', fontsize=16, fontweight='bold', pad=10)
+    plt.title("FINANZKRAFT DER HAUSHALTE", fontsize=16, fontweight='bold', color="#08306b", loc='left', pad=20)
+    plt.text(0, 1.02, "Faktoren: Kaufkraft, Hohe Einkommen, Medianeinkommen", transform=plt.gca().transAxes,
+             color='gray', fontsize=10)
 
-        # UNTERTITEL (Die "Zutaten")
-        plt.text(0.5, 1.02, f"Basis-Faktoren: {info['beschreibung']}",
-                 transform=plt.gca().transAxes, fontsize=10, color='#555555',
-                 style='italic', ha='center')
+    for bar in bars:
+        plt.text(bar.get_width() + 1, bar.get_y() + bar.get_height() / 2, f'{bar.get_width():.1f} Pkt.', va='center',
+                 fontweight='bold', color="#08306b")
 
-        plt.xlabel('Aggregierter Score (0-100)')
-        plt.xlim(0, 115)
+    sns.despine(left=True, bottom=True)
+    plt.tight_layout()
+    plt.savefig("Plot_1_Wohlstand.png", dpi=300)
+    plt.show()
 
-        # Werte beschriften
-        for bar in bars:
-            width = bar.get_width()
-            plt.text(width + 1, bar.get_y() + bar.get_height() / 2,
-                     f'{width:.1f} Pkt.', va='center', fontweight='bold', color=info["color"])
+    # --- 2. PLOT: WIRTSCHAFTSKRAFT & DICHTE ---
+    plt.figure(figsize=(10, 6))
+    group_name = "Temp_Score_Wirtschaft"
+    cols_wi = ["Einwohnerdichte", "Beschäftigtendichte (AO)",
+               "Bruttoinlandsprodukt je Einwohner in Kaufkraftstandards (KKS)"]
+    df_ranking[group_name] = df_ranking[[f"Score_{c}" for c in cols_wi if f"Score_{c}" in df_ranking.columns]].mean(
+        axis=1)
 
-        sns.despine()
-        plt.tight_layout()
+    top_5 = df_ranking.sort_values(by=group_name).tail(5)
+    bars = plt.barh(top_5["Name"], top_5[group_name], color=gradients["Wirtschaft"][::-1], height=0.6)
 
-        # Speichern
-        plt.savefig(f"Plot_{dateiname}.png", dpi=300, bbox_inches="tight")
-        plt.show()
+    plt.title("WIRTSCHAFTLICHE AKTIVITÄT & DICHTE", fontsize=16, fontweight='bold', color="#00441b", loc='left', pad=20)
+    plt.text(0, 1.02, "Faktoren: Jobdichte, Einwohnerdichte, BIP pro Kopf", transform=plt.gca().transAxes, color='gray',
+             fontsize=10)
 
-        # --- 1. ZÄHLEN DER TOP-5 PLATZIERUNGEN ---
-        top_auftritte = []
+    for bar in bars:
+        plt.text(bar.get_width() + 1, bar.get_y() + bar.get_height() / 2, f'{bar.get_width():.1f} Pkt.', va='center',
+                 fontweight='bold', color="#00441b")
 
-        for dateiname, info in kategorien_gruppen.items():
-            # Wir nutzen die bereits berechneten Gruppen-Scores aus dem vorherigen Schritt
-            group_score_name = f"Temp_Score_{dateiname}"
-            if group_score_name in df_ranking.columns:
-                # Die 5 besten Namen dieser Kategorie sammeln
-                top_5_namen = df_ranking.sort_values(by=group_score_name, ascending=False).head(5)["Name"].tolist()
-                top_auftritte.extend(top_5_namen)
+    sns.despine(left=True, bottom=True)
+    plt.tight_layout()
+    plt.savefig("Plot_2_Wirtschaft.png", dpi=300)
+    plt.show()
 
-        # Häufigkeit zählen
-        auftritte_count = Counter(top_auftritte)
-        # In DataFrame umwandeln für den Plot
-        df_konsistenz = pd.DataFrame(auftritte_count.items(), columns=['Name', 'Anzahl']).sort_values(by='Anzahl',
-                                                                                                      ascending=True)
 
-        # --- 2. PLOT: DIE KONSISTENZ-SIEGER ---
-        plt.figure(figsize=(10, 6))
-        # Wir nehmen nur die, die mindestens 2-mal in den Top 5 waren
-        df_konsistenz_filtered = df_konsistenz[df_konsistenz['Anzahl'] >= 1]
+    # --- 3. PLOT: MOBILITÄT & INFRASTRUKTUR (GRAU & ELECTRIC BLUE) ---
+    plt.figure(figsize=(10, 6))
+    group_name = "Temp_Score_Mobil"
+    cols_mobil = ["Pkw-Dichte"]
+    df_ranking[group_name] = df_ranking[[f"Score_{c}" for c in cols_mobil if f"Score_{c}" in df_ranking.columns]].mean(
+        axis=1)
 
-        colors = sns.color_palette("viridis", len(df_konsistenz_filtered))
-        bars = plt.barh(df_konsistenz_filtered["Name"], df_konsistenz_filtered["Anzahl"], color="#1d3557", height=0.6)
+    top_5_m = df_ranking.sort_values(by=group_name).tail(5)
+    colors_m = ["#caa3ef", "#b17be3", "#924ed1", "#54007c", "#46005f"]  # lila Highlight
 
-        # Titel & Beschriftung
-        plt.title('Die "Allrounder" Nordbayerns\n', fontsize=16, fontweight='bold')
-        plt.suptitle('Häufigkeit der Top-5-Platzierungen über alle 4 Kategorien', fontsize=10, color='#555555', y=0.92)
+    bars_m = plt.barh(top_5_m["Name"], top_5_m[group_name], color=colors_m, height=0.6, edgecolor="#2c3e50",
+                      linewidth=0.5)
+    plt.title("MOBILITÄT & INFRASTRUKTUR", fontsize=16, fontweight='bold', color="#2c3e50", loc='left', pad=20)
+    plt.text(0, 1.02, "Faktor: Pkw-Dichte pro 1.000 Einwohner", transform=plt.gca().transAxes, color='gray',
+             fontsize=10)
 
-        plt.xlabel('Anzahl der Top-5-Platzierungen')
-        plt.xticks(range(0, 5))  # Da es nur 4 Kategorien gibt
+    for bar in bars_m:
+        plt.text(bar.get_width() + 1, bar.get_y() + bar.get_height() / 2, f'{bar.get_width():.1f} Pkt.',
+                 va='center', fontweight='bold', color="#4d0092")
 
-        # Werte an die Balken
-        for bar in bars:
-            width = bar.get_width()
-            plt.text(width + 0.1, bar.get_y() + bar.get_height() / 2,
-                     f'{int(width)}x', va='center', fontweight='bold', color='#1d3557')
+    sns.despine(left=True, bottom=True)
+    plt.tight_layout()
+    plt.savefig("Plot_3_Mobilitaet.png", dpi=300)
+    plt.show()
 
-        sns.despine()
-        plt.tight_layout()
+    # --- 4. PLOT: SOZIALE STABILITÄT (ERDTÖNE & ORANGE) ---
+    plt.figure(figsize=(10, 6))
+    group_name = "Temp_Score_Stabil"
+    cols_stabil = ["Arbeitslosenquote", "Haushalte mit niedrigem Einkommen"]
+    df_ranking[group_name] = df_ranking[[f"Score_{c}" for c in cols_stabil if f"Score_{c}" in df_ranking.columns]].mean(
+        axis=1)
 
-        # Speichern
-        plt.savefig("Plot_Konsistenz_Sieger.png", dpi=300, bbox_inches="tight")
-        plt.show()
+    top_5_s = df_ranking.sort_values(by=group_name).tail(5)
+    colors_s = ["#db9c60", "#ae794b", "#976841", "#6a452c", "#3d2217"]  # Braun & Orange Highlight
+
+    bars_s = plt.barh(top_5_s["Name"], top_5_s[group_name], color=colors_s, height=0.6, edgecolor="#2c3e50",
+                      linewidth=0.5)
+    plt.title("SOZIALE STABILITÄT (RISIKO-MINIMIERUNG)", fontsize=16, fontweight='bold', color="#3d2217", loc='left',
+              pad=20)
+    plt.text(0, 1.02, "Faktoren: Arbeitslosenquote, Niedrige Einkommen (invertiert)", transform=plt.gca().transAxes,
+             color='gray', fontsize=10)
+
+    for bar in bars_s:
+        plt.text(bar.get_width() + 1, bar.get_y() + bar.get_height() / 2, f'{bar.get_width():.1f} Pkt.',
+                 va='center', fontweight='bold', color="#3d2217")
+
+    sns.despine(left=True, bottom=True)
+    plt.tight_layout()
+    plt.savefig("Plot_4_Stabilitaet.png", dpi=300)
+    plt.show()
+
+    # --- 5. FINALES RANKING: ALLROUNDER KONSISTENZ (ANTHRAZIT & GOLD) ---
+    top_auftritte = []
+    kategorie_spalten = ["Temp_Score_Wohlstand", "Temp_Score_Wirtschaft", "Temp_Score_Mobil", "Temp_Score_Stabil"]
+
+    for spalte in kategorie_spalten:
+        if spalte in df_ranking.columns:
+            top_5_namen = df_ranking.sort_values(by=spalte, ascending=False).head(5)["Name"].tolist()
+            top_auftritte.extend(top_5_namen)
+
+    auftritte_count = Counter(top_auftritte)
+    df_allrounder = pd.DataFrame(auftritte_count.items(), columns=['Name', 'Anzahl']).sort_values(by='Anzahl',
+                                                                                                  ascending=True)
+    df_allrounder = df_allrounder.tail(4)  # Top 4
+
+    plt.figure(figsize=(11, 6))
+    max_count = df_allrounder["Anzahl"].max()
+    colors_final = ["#ff4d00"]
+
+    bars_f = plt.barh(df_allrounder["Name"], df_allrounder["Anzahl"], color=colors_final, height=0.5,
+                      edgecolor="#2c3e50")
+    plt.title('DIE KONSISTENZ-ELITE NORDBAYERNS', fontsize=18, fontweight='bold', color='#2c3e50', loc='left', pad=20)
+    plt.text(0, 1.02, 'Anzahl der Top-5-Platzierungen über alle 4 Analyse-Dimensionen', transform=plt.gca().transAxes,
+             fontsize=11, color='#7f8c8d')
+
+    for bar in bars_f:
+        plt.text(bar.get_width() + 0.1, bar.get_y() + bar.get_height() / 2, f' {int(bar.get_width())} von 4 Kategorien',
+                 va='center', fontweight='bold', color='#2c3e50', fontsize=12)
+
+    plt.xticks(range(0, 6))
+    plt.xlim(0, 5.5)
+    sns.despine(left=True, bottom=True)
+    plt.tight_layout()
+    plt.savefig("Plot_5_Final_Allrounder.png", dpi=300)
+    plt.show()
+
+    # --- 4. ANGEPASSTES TOP 10 RANKING (MIT HIGHLIGHT-FARBE) ---
+
+    # 1. Identifiziere die Top 4 Allrounder (analog zu deinem Plot 5)
+    top_auftritte_list = []
+    kategorie_spalten = ["Temp_Score_Wohlstand", "Temp_Score_Wirtschaft", "Temp_Score_Mobil", "Temp_Score_Stabil"]
+
+    for spalte in kategorie_spalten:
+        if spalte in df_ranking.columns:
+            top_5_namen = df_ranking.sort_values(by=spalte, ascending=False).head(5)["Name"].tolist()
+            top_auftritte_list.extend(top_5_namen)
+
+    # Die 4 häufigsten Namen finden
+    counts = Counter(top_auftritte_list)
+    top_4_allrounder = [name for name, count in counts.most_common(4)]
+
+    # 2. Plotting
+    plt.style.use('seaborn-v0_8-white')
+    plot_df = top_10.sort_values(by="Gesamt_Index", ascending=True)
+
+    fig, ax = plt.subplots(figsize=(12, 7))
+
+    # Farblogik: Wenn Name in Top 4 Allroundern -> Orange-Rot, sonst Standard-Blau
+    highlight_color = "#ff4d00"  # Die Farbe aus deinem Allrounder-Plot
+    standard_color = "#1a4a7c"  # Dein ursprüngliches Blau
+
+    bar_colors = [highlight_color if name in top_4_allrounder else standard_color for name in plot_df["Name"]]
+
+    bars = ax.barh(plot_df["Name"], plot_df["Gesamt_Index"], color=bar_colors, height=0.6)
+
+    ax.set_title(f'Top 10 Standortpotenziale Nordbayern ({latest_year})\n',
+                 fontsize=18, fontweight='bold', loc='left')
+    ax.set_xlabel('Gesamt-Potenzial (Score 0-100)')
+    ax.set_xlim(0, 115)  # Etwas mehr Platz für die Text-Labels
+
+    # Untertitel zur Erklärung der Farben
+    ax.text(0, 1.02, f"Markiert in Orange: Die Top 4 'Allrounder' mit der höchsten Konstanz über alle Kategorien",
+            transform=ax.transAxes, fontsize=10, color=highlight_color, fontweight='bold')
+
+    for bar, color in zip(bars, bar_colors):
+        width = bar.get_width()
+        ax.text(width + 1, bar.get_y() + bar.get_height() / 2,
+                f'{width:.1f} Pkt.', va='center', fontweight='bold', color=color)
+
+    sns.despine(left=True, bottom=True)
+    ax.xaxis.grid(True, linestyle='--', alpha=0.3)
+    plt.tight_layout()
+
+    plt.savefig(f"Ranking_Gesamt_Highlighted_{latest_year}.png", dpi=300, bbox_inches="tight")
+    plt.show()
+
+    print("Alle 5 Visualisierungen wurden erfolgreich als PNG gespeichert.")
 
     # --- 5. VOLLSTÄNDIGE TABELLE (MIT ALLEN VARIABLEN) ---
     # Hier werden nun alle Indikatoren wieder hinzugefügt
