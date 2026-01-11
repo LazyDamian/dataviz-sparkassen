@@ -78,7 +78,10 @@ if csv_file_path.exists():
 
 
     values_to_delete = ['Erlangen-Höchstadt', 'Unterfranken', 'Neustadt a.d.Aisch-Bad Windsheim', 'Kronach', 'Oberpfalz',
-                        'Oberfranken']
+                        'Oberfranken', 'Würzburg, Stadt', 'Weißenburg-Gunzenhausen', 'Mittelfranken', 'Bamberg, Stadt',
+                        'Regensburg, Stadt', 'Wunsiedel i.Fichtelgebirge', 'Coburg, Stadt', 'Fürth, Stadt',
+                        'Bayreuth, Stadt', 'Ansbach, Stadt', 'Nürnberg', #Nuremberg
+                        'Amberg', 'Weiden i.d.OPf.', 'Hof, Stadt', 'Schweinfurt, Stadt']
 
     # Create a boolean mask to identify elements to keep
     mask = ~np.isin(regionen, values_to_delete)
