@@ -90,6 +90,8 @@ if csv_file_path.exists():
 
     print(regionen)
 
+    regionen = np.append(regionen, 'Nuernberg')
+
     regionen_datei = open("./data/regionen_in_nordbayern/regionenpur.npy", "wb")
     np.save("./data/regionen_in_nordbayern/regionenpur.npy", regionen)
     regionen_datei.close()
@@ -114,6 +116,12 @@ if csv_file_path.exists():
         atm_df = pd.concat([atm_df, new_row], ignore_index=True)
 
     print(atm_df)
+
+    atm_df.to_csv('bruh.csv', index=False)
+
+    regionen_datei = open("./data/regionen_in_nordbayern/regionenpur.npy", "wb")
+    np.save("./data/regionen_in_nordbayern/regionenpur.npy", atm_df)
+    regionen_datei.close()
 
 
 
