@@ -117,7 +117,7 @@ if csv_file_path.exists():
 
     print(atm_df)
 
-    atm_df.to_csv('bruh.csv', index=False)
+    atm_df.to_csv('atm_count.csv', index=False)
 
     regionen_datei = open("./data/regionen_in_nordbayern/regionenpur.npy", "wb")
     np.save("./data/regionen_in_nordbayern/regionenpur.npy", atm_df)

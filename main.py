@@ -332,3 +332,5 @@ else:
     pd.options.display.width = 1000
     print(report_table.to_string(index=False, float_format=lambda x: "{:,.1f}".format(x)))
     print("═" * 300)
+
+
