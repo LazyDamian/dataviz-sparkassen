@@ -301,7 +301,7 @@ plt.savefig(output_dir / "2_Markvolumen_Sicherheit.png", dpi=300)
 # === PLOT 3: HEATMAP (MIT FARBEN AUS PLOT 4a) ===
 from matplotlib.colors import LinearSegmentedColormap
 
-plt.figure(figsize=(12, 8))
+plt.figure(figsize=(14, 9))
 
 # Wir nutzen exakt dieselben Top 8, sortiert nach Gesamt-Index (Vorher)
 plot_heatmap = top_8_global.sort_values(by="Index_Vorher", ascending=False).copy()
@@ -345,8 +345,8 @@ for i, col_name in enumerate(hm_data.columns):
 
 plt.title("STÄRKEN-PROFILE NACH KATEGORIEN", pad=20, fontsize=18)
 plt.ylabel("")
-plt.xticks(fontsize=15, weight='bold')
-plt.yticks(fontsize=14, weight='bold', rotation=0)
+plt.xticks(fontsize=16, weight='bold')
+plt.yticks(fontsize=16, weight='bold', rotation=0)
 plt.tight_layout()
 plt.savefig(output_dir / "3_Stärken_Profil.png", dpi=300)
 
@@ -461,7 +461,7 @@ plt.tight_layout()
 plt.savefig(output_dir / "4a_Gesamt_Score_Kateg.png", dpi=300)
 
 # === PLOT 4b: REALITÄTS-CHECK (LOGIK GEDREHT: VIEL SERVICE = GUT) ===
-plt.figure(figsize=(12, 9))
+plt.figure(figsize=(14, 9))
 
 # 1. BERECHNUNG
 plot_data_4b = top_8_global.copy()
@@ -519,7 +519,7 @@ for i in range(len(plot_data_4b)):
                      xytext=(row['Index_Vorher'], i+1),
                      arrowprops=dict(arrowstyle='-> ', color='black', lw=2.5))
 
-plt.yticks(my_range, plot_data_4b['Name'], fontsize=13, fontweight='bold', color='#222222')
+plt.yticks(my_range, plot_data_4b['Name'], fontsize=16, fontweight='bold', color='#222222')
 plt.title("FINALES ERGEBNIS: PUNKTZAHL NACH INTEGRIERUNG DER BANKDICHTE", pad=20, fontsize=18)
 plt.xlabel("Gesamt-Score ", fontsize=15, fontweight='bold')
 plt.legend(loc='lower right', frameon=True, fontsize=15)
