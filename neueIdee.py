@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from pathlib import Path
 from matplotlib.lines import Line2D
+from adjustText import adjust_text  # Importieren
 
 # --- 1. SETUP & DESIGN ---
 output_dir = Path("figures_final_consistent_top8")
@@ -204,7 +205,7 @@ for i, row in plot_radar.iterrows():
 
 
 # 5. Titel & Achsen
-plt.title(f"SÄTTIGUNGS-RADAR: POTENZIAL-ANALYSE (TOP 8)", pad=25, fontsize=18)
+plt.title(f"BANKDICHTE", pad=25, fontsize=20)
 
 # Beschriftung oben/unten
 plt.xlabel("← NIEDRIGE BANKDICHTE (HUNGRIG/GRÜN)        |       HOHE BANKDICHTE (GESÄTTIGT/ROT) →",
@@ -224,7 +225,7 @@ plt.text(avg_ew_pro_bank, -0.8, f"Ø {int(avg_ew_pro_bank)}", ha='center', fontw
 
 plt.grid(axis='x', alpha=0.5, linestyle='--')
 plt.tight_layout()
-plt.savefig(output_dir / "1_Saettigung_Absolute.png", dpi=300)
+plt.savefig(output_dir / "1_Bankdichte.png", dpi=300)
 
 # === PLOT 2: GOLDADER-BUBBLES (CUSTOM FARBEN: GRÜN/ROT) ===
 plt.figure(figsize=(14, 10))
@@ -256,15 +257,15 @@ sns.scatterplot(
     alpha=0.75, edgecolor="black"
 )
 
-# --- Beschriftung (Identisch wie vorher) ---
+# --- Beschriftung  ---
 sorted_points = plot_data.sort_values("Marktvolumen_Mio")
 occupied_y = []
 
 for i, row in sorted_points.iterrows():
     x, y = row.Score_Security, row.Marktvolumen_Mio
     name = row.Name
-    text_x = x + (plot_data["Score_Security"].max() - plot_data["Score_Security"].min()) * 0.035
-    text_y = y
+    text_x = x + (plot_data["Score_Security"].max() - plot_data["Score_Security"].min()) * 0.02
+    text_y = 0.5 * y + 0.3 * plot_data["Marktvolumen_Mio"].max()
 
     collision = True
     while collision:
@@ -277,14 +278,14 @@ for i, row in sorted_points.iterrows():
 
     plt.annotate(
         name, xy=(x, y), xytext=(text_x, text_y), textcoords='data',
-        fontsize=14, weight='bold', color='#222222',
+        fontsize=18, weight='bold', color='#222222',
         arrowprops=dict(arrowstyle="-|>", color='#444444', lw=1.5, connectionstyle="arc3,rad=0.1"),
-        bbox=dict(boxstyle="round,pad=0.3", fc="white", ec="#cccccc", alpha=0.9)
+        bbox=dict(boxstyle="round,pad=0.2", fc="white", ec="#cccccc", alpha=0.9)
     )
 
-plt.title("DIE GOLDADER-ANALYSE: DIE TOP 8", pad=20, fontsize=20)
-plt.xlabel("Soziale Sicherheit ", fontsize=16, weight='bold')
-plt.ylabel("Marktvolumen (Mio. €)", fontsize=14, weight='bold')
+plt.title("Marktvolumen & Soziale Sicherheit", pad=20, fontsize=22)
+plt.xlabel("Soziale Sicherheit", fontsize=16, weight='bold')
+plt.ylabel("Marktvolumen (Mio. €)", fontsize=16, weight='bold')
 plt.grid(True, linestyle='--', alpha=0.5)
 
 # Kleiner Hinweis zur Legende im Plot
@@ -292,8 +293,10 @@ plt.text(plot_data["Score_Security"].min(), plot_data["Marktvolumen_Mio"].max(),
          "Grün = Niedrige Konkurrenz\nRot = Hohe Konkurrenz",
          ha='left', va='top', fontsize=15, bbox=dict(facecolor='white', alpha=0.9, edgecolor='gray'))
 
+
+
 plt.tight_layout()
-plt.savefig(output_dir / "2_Goldader_GreenRed.png", dpi=300)
+plt.savefig(output_dir / "2_Markvolumen_Sicherheit.png", dpi=300)
 
 # === PLOT 3: HEATMAP (MIT FARBEN AUS PLOT 4a) ===
 from matplotlib.colors import LinearSegmentedColormap
@@ -340,12 +343,12 @@ for i, col_name in enumerate(hm_data.columns):
         annot_kws={"size": 13, "weight": "bold"}
     )
 
-plt.title("DIE CHAMPIONS (TOP 8): STÄRKEN-PROFIL NACH KATEGORIEN", pad=20, fontsize=18)
+plt.title("STÄRKEN-PROFILE NACH KATEGORIEN", pad=20, fontsize=18)
 plt.ylabel("")
 plt.xticks(fontsize=15, weight='bold')
 plt.yticks(fontsize=14, weight='bold', rotation=0)
 plt.tight_layout()
-plt.savefig(output_dir / "3_Scorecard_Colored.png", dpi=300)
+plt.savefig(output_dir / "3_Stärken_Profil.png", dpi=300)
 
 # === PLOT 4a: DNA DES ERFOLGS (SYNCHRON MIT HEATMAP) ===
 plt.figure(figsize=(14, 9))
@@ -455,7 +458,7 @@ plt.legend(
 )
 
 plt.tight_layout()
-plt.savefig(output_dir / "4a_Stacked_Bar_HeatmapMatch.png", dpi=300)
+plt.savefig(output_dir / "4a_Gesamt_Score_Kateg.png", dpi=300)
 
 # === PLOT 4b: REALITÄTS-CHECK (LOGIK GEDREHT: VIEL SERVICE = GUT) ===
 plt.figure(figsize=(12, 9))
@@ -497,13 +500,15 @@ for i, row in plot_data_4b.iterrows():
         colors_nachher.append('#d62728') # Rot (Abzug)
 
 # 3. PLOTTEN
-plt.hlines(y=my_range, xmin=plot_data_4b['Index_Nachher'], xmax=plot_data_4b['Index_Vorher'], color='grey', alpha=0.4, linewidth=3)
-plt.scatter(plot_data_4b['Index_Vorher'], my_range, color='grey', alpha=0.5, s=100, label='Potenzial (Datenbasis)')
-plt.scatter(plot_data_4b['Index_Nachher'], my_range, c=colors_nachher, alpha=1, s=150, zorder=5)
+plt.hlines(y=my_range, xmin=plot_data_4b['Index_Nachher'], xmax=plot_data_4b['Index_Vorher'],
+           color='grey', alpha=0.4, linewidth=2.5)
+plt.scatter(plot_data_4b['Index_Vorher'], my_range, color='grey', alpha=0.65, s=200,
+            label='Score ohne Einberechnung', zorder=4)
+plt.scatter(plot_data_4b['Index_Nachher'], my_range, c=colors_nachher, alpha=0.65, s=200, zorder=5)
 
 # Legende (angepasst an neue Logik)
-plt.scatter([], [], c='#2ca02c', s=150, label='Bonus (Gute Versorgung / Viele Banken)')
-plt.scatter([], [], c='#d62728', s=150, label='Strafe (Schlechte Versorgung / Wenig Banken)')
+plt.scatter([], [], c='#2ca02c', s=200, label='Bonus (Schlechte Versorgung / Wenig Banken)')
+plt.scatter([], [], c='#d62728', s=200, label='Strafe (Gute Versorgung / Viele Banken)')
 
 # Pfeile
 for i in range(len(plot_data_4b)):
@@ -512,24 +517,25 @@ for i in range(len(plot_data_4b)):
         plt.annotate('',
                      xy=(row['Index_Nachher'], i+1),
                      xytext=(row['Index_Vorher'], i+1),
-                     arrowprops=dict(arrowstyle='->', color='black', lw=1.5))
+                     arrowprops=dict(arrowstyle='-> ', color='black', lw=2.5))
 
-plt.yticks(my_range, plot_data_4b['Name'], fontsize=12, fontweight='bold', color='#222222')
-plt.title("DER REALITÄTS-CHECK: PUNKTZAHL NACH SERVICE-DICHTE", pad=20, fontsize=18)
-plt.xlabel("Gesamt-Score ", fontsize=12, fontweight='bold')
-plt.legend(loc='lower right', frameon=True, fontsize=10)
+plt.yticks(my_range, plot_data_4b['Name'], fontsize=13, fontweight='bold', color='#222222')
+plt.title("FINALES ERGEBNIS: PUNKTZAHL NACH INTEGRIERUNG DER BANKDICHTE", pad=20, fontsize=18)
+plt.xlabel("Gesamt-Score ", fontsize=15, fontweight='bold')
+plt.legend(loc='lower right', frameon=True, fontsize=15)
 plt.grid(axis='x', linestyle='--', alpha=0.5)
 
 # Text unten
 plt.text(
     x=0.02, y=0.98,  # Position: 2% von links, 98% von unten
-    s=f"Referenz: Ø {ref_avg} Einwohner pro Bank.\n• Weniger Ew/Bank (< {ref_avg}) = Hohe Dichte = Bonus (Grün)\n• Mehr Ew/Bank (> {ref_avg}) = Niedrige Dichte = Strafe (Rot)",
+    s=f"Referenz: Ø {ref_avg} Einwohner pro Bank.\n• (< {ref_avg}) = Hohe Dichte = Bonus (Grün)"
+      f"\n• (> {ref_avg}) = Niedrige Dichte = Strafe (Rot)",
     transform=plt.gca().transAxes,  # WICHTIG: Bezieht sich auf den Rahmen des Diagramms
     ha='left', va='top',            # Ankerpunkt der Box ist oben links
-    fontsize=10,
+    fontsize=16,
     bbox=dict(facecolor='white', alpha=0.8, edgecolor='gray'),
     zorder=20                       # Stellt sicher, dass es über den Linien liegt
 )
 
 plt.tight_layout()
-plt.savefig(output_dir / "4b_BonusMalus_ServiceLogic.png", dpi=300)
+plt.savefig(output_dir / "4b_Finaler_Score_Bankdichte.png", dpi=300)
